@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "asyntree"
-version = "0.1.0"
+version = "0.2.0"
 description = "Analyse the abstract syntax tree of python modules."
 authors = ["Luke Miloszewski <lukemiloszewski@gmail.com>"]
 license = "MIT"
@@ -37,7 +37,8 @@ rich = "^12.5.1"
 typeguard = "^2.13.3"
 
 [tool.poetry.scripts]
-asyntree = "asyntree.__main__:main"
+asyntree = "asyntree.main:app"
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
