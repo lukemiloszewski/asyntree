@@ -1,13 +1,4 @@
-import typer
+from asyntree.main import app
 
 
-app = typer.Typer()
-
-
-@app.command()
-def main() -> None:
-    """asyntree."""
-
-
-if __name__ == "__main__":
-    app(prog_name="asyntree")  # pragma: no cover
+app(prog_name="asyntree")
