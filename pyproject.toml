@@ -24,7 +24,7 @@ python = ">=3.8.0,<3.11.0"
 black = {extras = ["jupyter"], version = "^22.6.0"}
 flake8 = "^5.0.4"
 isort = "^5.10.0"
-ipykernel = "^6.15.1"
+ipykernel = "^6.17.1"
 ipython = "^8.4.0"
 mkdocs-material = "^8.4.2"
 mypy = "^0.971"
