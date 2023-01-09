@@ -33,7 +33,7 @@ pydocstyle = "^6.1.1"
 pytest = "^7.0.0"
 pytest-asyncio = "^0.19.0"
 pytest-cov = "^3.0.0"
-rich = "^12.5.1"
+rich = "^13.0.1"
 typeguard = "^2.13.3"
 
 [tool.poetry.scripts]
