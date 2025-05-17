@@ -1,66 +1,37 @@
-[tool.poetry]
+[project]
 name = "asyntree"
 version = "0.2.0"
-description = "Analyse the abstract syntax tree of python modules."
-authors = ["Luke Miloszewski <lukemiloszewski@gmail.com>"]
-license = "MIT"
+description = "Syntax trees and file utilities."
+authors = [
+    {name = "Luke Miloszewski", email = "lukemiloszewski@gmail.com"}
+]
+license = {text = "MIT"}
 readme = "README.md"
-homepage = "https://github.com/lukemiloszewski/asyntree"
-repository = "https://github.com/lukemiloszewski/asyntree"
+requires-python = ">=3.12.0,<3.14.0"
 classifiers = [
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
 
-[tool.poetry.urls]
+[project.urls]
+Homepage = "https://github.com/lukemiloszewski/asyntree"
+Repository = "https://github.com/lukemiloszewski/asyntree"
 Changelog = "https://github.com/lukemiloszewski/asyntree/releases"
 
-[tool.poetry.dependencies]
-typer = "^0.6.1"
-python = ">=3.8.0,<3.11.0"
-
-[tool.poetry.dev-dependencies]
-black = {extras = ["jupyter"], version = "^22.6.0"}
-flake8 = "^5.0.4"
-isort = "^5.10.0"
-ipykernel = "^6.15.1"
-ipython = "^8.4.0"
-mkdocs-material = "^8.4.2"
-mypy = "^0.971"
-pre-commit = "^2.17.0"
-pydocstyle = "^6.1.1"
-pytest = "^7.0.0"
-pytest-asyncio = "^0.19.0"
-pytest-cov = "^3.0.0"
-rich = "^12.5.1"
-typeguard = "^2.13.3"
-
-[tool.poetry.scripts]
+[project.scripts]
 asyntree = "asyntree.main:app"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[project.dependencies]
+rich = ">=12.5.1,<13.0.0"
+typer = ">=0.6.1,<0.7.0"
 
-[tool.mypy]
-strict = true
-warn_return_any = false
-show_column_numbers = true
-show_error_codes = true
-
-[tool.pydocstyle]
-convention = "google"
-add_ignore = ["D100","D104", "D105", "D106", "D107"]
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 100
-lines_after_imports = 2
-
-[tool.black]
-line-length = 100
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.19.0",
+    "pytest-cov>=3.0.0",
+    "typeguard>=2.13.3",
+]
 
 [tool.coverage.paths]
 source = ["src"]
@@ -76,3 +47,7 @@ fail_under = 100
 omit = [
   "*/*init*",
 ]
+
+[build-system]
+requires = ["uv_build>=0.7.5,<0.8.0"]
+build-backend = "uv_build"
