@@ -1,3 +1,7 @@
+[build-system]
+requires = ["uv_build>=0.7.5,<0.8.0"]
+build-backend = "uv_build"
+
 [project]
 name = "asyntree"
 version = "0.2.0"
@@ -12,6 +16,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
 ]
+dependencies = [
+    "rich~=14.0",
+    "typer~=0.15"
+]
 
 [project.urls]
 Homepage = "https://github.com/lukemiloszewski/asyntree"
@@ -19,19 +27,21 @@ Repository = "https://github.com/lukemiloszewski/asyntree"
 Changelog = "https://github.com/lukemiloszewski/asyntree/releases"
 
 [project.scripts]
-asyntree = "asyntree.main:app"
-
-[project.dependencies]
-rich = ">=12.5.1,<13.0.0"
-typer = ">=0.6.1,<0.7.0"
+asyntree = "asyntree.cli:app"
 
 [dependency-groups]
 dev = [
-    "pytest>=7.0.0",
-    "pytest-asyncio>=0.19.0",
-    "pytest-cov>=3.0.0",
-    "typeguard>=2.13.3",
+    "deptry~=0.21",
+    "pytest~=8.3",
+    "pytest-cov~=6.1",
+    "ruff~=0.11",
+    "typeguard~=4.4",
 ]
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+publish-url = "https://upload.pypi.org/legacy/"
 
 [tool.coverage.paths]
 source = ["src"]
@@ -48,6 +58,23 @@ omit = [
   "*/*init*",
 ]
 
-[build-system]
-requires = ["uv_build>=0.7.5,<0.8.0"]
-build-backend = "uv_build"
+[tool.ruff]
+line-length = 100
+lint.ignore = [
+    "E501",  # line too long, handled by black
+    "E731",  # lambda assignment
+    "UP007", # use `X | Y` for type annotations
+    "UP006", # super-call-super
+    "UP035", # typing.type is deprecated
+]
+lint.select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.isort]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+known-first-party = ["asyntree"]
