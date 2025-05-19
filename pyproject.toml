@@ -34,7 +34,7 @@ pytest = "^7.0.0"
 pytest-asyncio = "^0.19.0"
 pytest-cov = "^3.0.0"
 rich = "^12.5.1"
-typeguard = "^2.13.3"
+typeguard = "^4.4.0"
 
 [tool.poetry.scripts]
 asyntree = "asyntree.main:app"
