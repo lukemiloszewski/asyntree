@@ -1,5 +1,5 @@
 init:
-	uv venv .venv --python 3.12
+	uv venv .venv
 	uv sync
 
 test:
