@@ -1,35 +1,22 @@
 init:
-	poetry config virtualenvs.in-project true
-	poetry install
-	poetry run pre-commit install --hook-type pre-commit --install-hooks
+	uv venv .venv
+	uv sync
 
 test:
-	poetry run pytest tests -v --cov
+	uv run pytest tests -v --cov
+
+lint:
+	uv run ruff check src tests
+	uv run ruff format src tests --check
+	uv run deptry src tests
+
+format:
+	uv run ruff check src tests --fix
+	uv run ruff format src tests
+
+deps:
+	uv export --format requirements.txt --output-file requirements.txt --no-hashes
 
 publish:
-	poetry publish --build
-
-requirements:
-	poetry export -f requirements.txt --output requirements.txt
-
-flake8:
-	poetry run flake8 src tests
-
-mypy:
-	poetry run mypy src tests
-
-pydocstyle:
-	poetry run pydocstyle src
-
-isort:
-	poetry run isort src tests
-
-black:
-	poetry run black src tests
-
-lint: flake8 mypy pydocstyle
-
-format: isort black
-
-pre-commit:
-	poetry run pre-commit run --all-files --color=always
+	uv build
+	uv publish --index pypi --token ...
