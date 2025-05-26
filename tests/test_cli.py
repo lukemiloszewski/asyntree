@@ -5,6 +5,12 @@ from typer.testing import CliRunner
 from asyntree import cli
 
 
+class TestAAA:
+    def test_help(self, fixt_cli_runner: CliRunner) -> None:
+        result = fixt_cli_runner.invoke(cli.app, ["describe"])
+        assert result.exit_code == 0
+
+
 class TestCLIHelp:
     def test_help(self, fixt_cli_runner: CliRunner) -> None:
         result = fixt_cli_runner.invoke(cli.app, ["--help"])

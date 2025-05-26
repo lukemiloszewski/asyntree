@@ -1,90 +1,74 @@
-import sys
+import pathlib
+from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.pretty import pprint
 
 from asyntree.api import (
-    analyze_directory,
-    export_directory_contents,
-    extract_dependencies,
-    generate_requirements_txt,
-    generate_tree_structure,
+    describe,
+    to_llm,
+    to_requirements,
+    to_tree,
 )
+from asyntree.parser import parse_directory
 
 app = typer.Typer(add_completion=False)
 console = Console()
 
 
-@app.command()
-def describe(
-    path: str = typer.Argument(..., help="Input a directory or file path"),
+@app.command("describe")
+def cli_describe(
+    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
 ) -> None:
-    """Analyze Python files and show AST node counts."""
+    """Describe the ast nodes of all python files."""
     try:
-        output = analyze_directory(path)
-        pprint(output, max_length=50)
+        file_paths = parse_directory(path, include=[".py"])
+        cli_output = describe(file_paths)
+        console.print(cli_output)
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-tree")
-def to_tree(
-    path: str = typer.Argument(..., help="Input a directory path"),
+def cli_to_tree(
+    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
 ) -> None:
-    """Display the tree structure of a directory."""
+    """Generate tree structure."""
     try:
-        tree_lines = generate_tree_structure(path)
-        for line in tree_lines:
-            console.print(line)
-    except FileNotFoundError as e:
-        console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
+        directory_path = pathlib.Path(path).resolve() if path else pathlib.Path.cwd()
+        cli_output = to_tree(directory_path)
+        console.print(cli_output)
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-llm")
-def to_llm(
-    path: str = typer.Argument(..., help="Input a directory or file path"),
-    output: str = typer.Option("llm.txt", "--output", "-o", help="Output file name"),
+def cli_to_llm(
+    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
+    output_file: str = typer.Option("llm.txt", "--output", "-o", help="Output file name"),
 ) -> None:
-    """Export directory contents to a markdown file for LLM consumption."""
+    """Generate (and export) the llm.txt file."""
     try:
-        output_path = export_directory_contents(path, output)
-        console.print(f"[green]Exported to: {output_path}[/green]")
+        file_paths = parse_directory(path)
+        cli_output = to_llm(file_paths, output_file=output_file)
+        console.print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-requirements")
-def to_requirements(
-    path: str = typer.Argument(..., help="Input a directory path"),
-    output: str = typer.Option("requirements.txt", "--output", "-o", help="Output file name"),
+def cli_to_requirements(
+    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
+    output_file: str = typer.Option("requirements.txt", "--output", "-o", help="Output file name"),
 ) -> None:
-    """Generate a requirements.txt file from Python imports."""
+    """Generate (and export) the requirements.txt file."""
     try:
-        output_path = generate_requirements_txt(path, output)
-        dependencies = extract_dependencies(path)
-
-        console.print(f"[green]Generated {output}: {output_path}[/green]")
-        console.print(f"[blue]Found {len(dependencies)} unique dependencies[/blue]")
+        file_paths = parse_directory(path, include=[".py"])
+        cli_output = to_requirements(file_paths, output_file=output_file)
+        console.print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"Error: {e}")
         raise typer.Exit(1)
-
-
-def main():
-    """Main entry point."""
-    if len(sys.argv) == 1:
-        console.print("[yellow]No command provided. Use --help to see available commands.[/yellow]")
-        raise typer.Exit(1)
-
-    app()
-
-
-if __name__ == "__main__":
-    main()

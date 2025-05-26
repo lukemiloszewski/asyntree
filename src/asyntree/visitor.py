@@ -24,19 +24,19 @@ class ImportVisitor(ast.NodeVisitor):
 
     def __init__(self):
         self.imports = set()
-    
+
     def visit_Import(self, node):
         for alias in node.names:
-            top_level_module = alias.name.split('.')[0]
+            top_level_module = alias.name.split(".")[0]
             self.imports.add(top_level_module)
         self.generic_visit(node)
-    
+
     def visit_ImportFrom(self, node):
         if node.module and node.level == 0:
-            top_level_module = node.module.split('.')[0]
+            top_level_module = node.module.split(".")[0]
             self.imports.add(top_level_module)
         self.generic_visit(node)
-    
+
     def run(self, tree: ast.AST) -> Set[str]:
         self.imports.clear()
         self.visit(tree)

@@ -1,6 +1,6 @@
 init:
 	uv venv .venv
-	uv sync
+	uv sync --all-extras
 
 test:
 	uv run pytest tests -v --cov
@@ -15,6 +15,8 @@ format:
 	uv run ruff format src tests
 
 deps:
+	uv lock --check
+	uv lock --upgrade
 	uv export --format requirements.txt --output-file requirements.txt --no-hashes
 
 publish:

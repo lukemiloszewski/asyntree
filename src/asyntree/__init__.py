@@ -3,12 +3,12 @@
 import importlib.metadata
 
 from asyntree.api import (
-    analyze_directory,
-    export_directory_contents,
-    extract_dependencies,
-    generate_requirements_txt,
-    generate_tree_structure,
-    process_ast,
+    describe,
+    parse_ast,
+    parse_directory,
+    to_llm,
+    to_requirements,
+    to_tree,
 )
 
 __title__ = "asyntree"
@@ -20,10 +20,13 @@ except importlib.metadata.PackageNotFoundError:
     __version__ = "unknown"
 
 __all__ = [
-    "analyze_directory",
-    "export_directory_contents",
-    "extract_dependencies",
-    "generate_requirements_txt",
-    "generate_tree_structure",
-    "process_ast",
+    "describe",
+    "to_llm",
+    "to_requirements",
+    "to_tree",
+    "parse_directory",
+    "parse_ast",
+    "__title__",
+    "__description__",
+    "__version__",
 ]
