@@ -36,8 +36,8 @@ def cli_to_tree(
 ) -> None:
     """Generate tree structure."""
     try:
-        directory_path = pathlib.Path(path).resolve() if path else pathlib.Path.cwd()
-        cli_output = to_tree(directory_path)
+        file_paths = parse_directory(path, include=[".py"])
+        cli_output = to_tree(file_paths)
         console.print(cli_output)
     except Exception as e:
         console.print(f"Error: {e}")

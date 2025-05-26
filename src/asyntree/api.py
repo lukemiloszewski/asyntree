@@ -6,7 +6,11 @@ from rich.tree import Tree
 
 from asyntree.parser import parse_ast, parse_directory, walk_directory  # noqa: F401
 from asyntree.visitor import ImportVisitor, Visitor
-
+from typing import List, Dict
+import pathlib
+from rich.tree import Tree
+from rich.text import Text
+from rich.filesize import decimal
 
 def describe(paths: List[pathlib.Path]) -> List[Dict[str, Any]]:
     """Analyze all Python files in a directory and return AST metrics."""
@@ -21,12 +25,43 @@ def describe(paths: List[pathlib.Path]) -> List[Dict[str, Any]]:
     return output
 
 
-def to_tree(directory_path: pathlib.Path) -> Tree:
-    """Generate a tree structure representation of a directory."""
+def to_tree(paths: List[pathlib.Path]) -> Tree:
     tree = Tree("Directory Structure")
-
-    tree_output = walk_directory(directory_path, tree)
-    return tree_output
+    nodes: Dict[pathlib.Path, Tree] = {}
+    
+    if not paths:
+        return tree
+    
+    common_parent = paths[0].parent
+    for path in paths[1:]:
+        while not path.is_relative_to(common_parent):
+            common_parent = common_parent.parent
+    
+    root_name = common_parent.name if common_parent.name else "root"
+    root_node = tree.add(Text(root_name, "yellow bold"))
+    nodes[common_parent] = root_node
+    
+    for path in sorted(paths, key=lambda p: p.parts):
+        if path.name.startswith("."):
+            continue
+            
+        relative_path = path.relative_to(common_parent)
+        current = root_node
+        current_parent = common_parent
+        
+        for part in relative_path.parts[:-1]:
+            current_path = current_parent / part
+            if current_path not in nodes:
+                nodes[current_path] = current.add(Text(part, "yellow bold"))
+            current = nodes[current_path]
+            current_parent = current_path
+        
+        file_size = path.stat().st_size
+        text_filename = Text(path.name, "green")
+        text_filename.append(f" ({decimal(file_size)})", "blue")
+        current.add(text_filename)
+    
+    return tree
 
 
 def to_llm(paths: List[pathlib.Path], output_file: str = "llm.txt") -> pathlib.Path:
