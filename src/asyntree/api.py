@@ -1,4 +1,5 @@
 import ast
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
@@ -75,14 +76,12 @@ def export_directory_contents(path: str, output_file: str = "llm.txt") -> str:
     content = []
     content.append(f"# Directory Export: {path_obj.name}\n")
 
-    # Add tree structure
     content.append("## Directory Structure\n")
     content.append("```")
     tree_lines = generate_tree_structure(str(path_obj))
     content.extend(tree_lines)
     content.append("```\n")
 
-    # Add file contents
     content.append("## File Contents\n")
 
     def _process_directory(dir_path: Path, relative_base: Path):
@@ -95,7 +94,6 @@ def export_directory_contents(path: str, output_file: str = "llm.txt") -> str:
 
                     content.append(f"### `{relative_path}`\n")
 
-                    # Determine file type for syntax highlighting
                     suffix = item.suffix.lower()
                     if suffix == ".py":
                         lang = "python"
@@ -136,7 +134,6 @@ def export_directory_contents(path: str, output_file: str = "llm.txt") -> str:
     else:
         _process_directory(path_obj, path_obj)
 
-    # Write to output file
     output_path = Path(output_file)
     final_content = "\n".join(content)
 
@@ -164,22 +161,16 @@ def generate_requirements_txt(path: str, output_file: str = "requirements.txt") 
     """Generate a requirements.txt file from imports found in Python files."""
     dependencies = extract_dependencies(path)
 
-    # Filter out standard library modules and relative imports
-    stdlib_modules = _get_stdlib_modules()
     external_deps = []
 
     for dep in sorted(dependencies):
-        # Skip relative imports and standard library modules
-        if not dep.startswith(".") and dep not in stdlib_modules:
-            # Handle submodules (e.g., 'requests.auth' -> 'requests')
+        if not dep.startswith(".") and dep not in sys.stdlib_module_names:
             root_module = dep.split(".")[0]
-            if root_module not in stdlib_modules:
+            if root_module not in sys.stdlib_module_names:
                 external_deps.append(root_module)
 
-    # Remove duplicates and sort
     unique_deps = sorted(set(external_deps))
 
-    # Write requirements file
     output_path = Path(output_file)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write("# Generated requirements.txt\n")
@@ -189,58 +180,3 @@ def generate_requirements_txt(path: str, output_file: str = "requirements.txt") 
             f.write(f"{dep}\n")
 
     return str(output_path.resolve())
-
-
-def _get_stdlib_modules() -> Set[str]:
-    """Return a set of Python standard library module names."""
-    # This is a basic set of common stdlib modules
-    # In a production environment, you might want to use a more comprehensive approach
-    return {
-        "abc",
-        "argparse",
-        "ast",
-        "asyncio",
-        "base64",
-        "collections",
-        "concurrent",
-        "copy",
-        "csv",
-        "datetime",
-        "decimal",
-        "email",
-        "enum",
-        "functools",
-        "glob",
-        "hashlib",
-        "html",
-        "http",
-        "io",
-        "itertools",
-        "json",
-        "logging",
-        "math",
-        "multiprocessing",
-        "os",
-        "pathlib",
-        "pickle",
-        "re",
-        "shutil",
-        "socket",
-        "sqlite3",
-        "ssl",
-        "string",
-        "subprocess",
-        "sys",
-        "tempfile",
-        "threading",
-        "time",
-        "typing",
-        "unittest",
-        "urllib",
-        "uuid",
-        "warnings",
-        "weakref",
-        "xml",
-        "zipfile",
-        "zlib",
-    }

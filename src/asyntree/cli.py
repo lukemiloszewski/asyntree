@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 import typer
 from rich.console import Console
@@ -18,7 +17,7 @@ console = Console()
 
 
 @app.command()
-def analyze(
+def describe(
     path: str = typer.Argument(..., help="Input a directory or file path"),
 ) -> None:
     """Analyze Python files and show AST node counts."""
@@ -30,8 +29,8 @@ def analyze(
         raise typer.Exit(1)
 
 
-@app.command()
-def tree(
+@app.command("to-tree")
+def to_tree(
     path: str = typer.Argument(..., help="Input a directory path"),
 ) -> None:
     """Display the tree structure of a directory."""
@@ -47,8 +46,8 @@ def tree(
         raise typer.Exit(1)
 
 
-@app.command()
-def export(
+@app.command("to-llm")
+def to_llm(
     path: str = typer.Argument(..., help="Input a directory or file path"),
     output: str = typer.Option("llm.txt", "--output", "-o", help="Output file name"),
 ) -> None:
@@ -61,35 +60,8 @@ def export(
         raise typer.Exit(1)
 
 
-@app.command()
-def deps(
-    path: str = typer.Argument(..., help="Input a directory path"),
-    show_only: bool = typer.Option(
-        False, "--show", "-s", help="Only show dependencies, don't generate file"
-    ),
-) -> None:
-    """Extract Python dependencies from import statements."""
-    try:
-        dependencies = extract_dependencies(path)
-
-        if not dependencies:
-            console.print("[yellow]No external dependencies found.[/yellow]")
-            return
-
-        console.print(f"[blue]Found {len(dependencies)} dependencies:[/blue]")
-        for dep in sorted(dependencies):
-            console.print(f"  • {dep}")
-
-        if not show_only:
-            output_path = generate_requirements_txt(path)
-            console.print(f"\n[green]Generated requirements.txt: {output_path}[/green]")
-    except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
-
-
-@app.command()
-def requirements(
+@app.command("to-requirements")
+def to_requirements(
     path: str = typer.Argument(..., help="Input a directory path"),
     output: str = typer.Option("requirements.txt", "--output", "-o", help="Output file name"),
 ) -> None:
@@ -106,22 +78,12 @@ def requirements(
 
 
 def main():
-    """Main entry point - defaults to analyze command for backward compatibility."""
-    # If no subcommand is provided, default to analyze
+    """Main entry point."""
     if len(sys.argv) == 1:
         console.print("[yellow]No command provided. Use --help to see available commands.[/yellow]")
         raise typer.Exit(1)
 
-    # Check if the first argument is a path (for backward compatibility)
-    if len(sys.argv) == 2 and not sys.argv[1].startswith("-"):
-        path_arg = sys.argv[1]
-        if Path(path_arg).exists() or path_arg in ["--help", "-h"]:
-            # This looks like a path or help, let typer handle it normally
-            app()
-        else:
-            app()
-    else:
-        app()
+    app()
 
 
 if __name__ == "__main__":
