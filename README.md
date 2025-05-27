@@ -2,22 +2,41 @@
 
 Syntax trees and file utilities.
 
-## Commands
+## Usage
+
+As a cli:
+
+```shell
+# help
+uvx run asyntree --help
+
+# available commands
+uvx run asyntree describe .
+uvx run asyntree to-tree .
+uvx run asyntree to-llm .
+uvx run asyntree to-requirements .
+```
+
+As a library:
 
 ```python
-uv venv .venv --python 3.12
+import asyntree as at
 
-# create lock file
-uv lock
+requirements = at.to_requirements("...")
+```
 
-# check if lock file is up to date
-uv lock --check
+## Development
 
-# upgrade deps in lock file
-uv lock --upgrade
+```shell
+# install project
+make init
 
-# sync .venv with lock file
-uv sync --all-extras
+# run linting 
+make lint
 
-uv export --format requirements-txt
+# run formatting
+make format
+
+# run tests
+make test
 ```

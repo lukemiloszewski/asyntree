@@ -1,182 +1,156 @@
-import ast
+import pathlib
 import sys
-from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 
-from asyntree.parser import parse_path, parse_tree
+from rich.filesize import decimal
+from rich.text import Text
+from rich.tree import Tree
+
+from asyntree.parser import parse_ast, parse_directory
 from asyntree.visitor import ImportVisitor, Visitor
 
 
-def process_ast(tree: ast.AST, visitor: Visitor) -> Dict[str, int]:
-    """Process an AST with a given visitor and return the results."""
-    rv = dict(visitor.run(tree))
-    return rv
-
-
-def analyze_directory(path: str) -> List[Dict[str, Any]]:
-    """Analyze all Python files in a directory and return AST metrics."""
-    paths = parse_path(path)
-    output = []
+def describe(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
     visitor = Visitor()
+    output = []
 
-    for p in paths:
-        tree = parse_tree(p)
-        metrics = process_ast(tree, visitor)
-        output.append({"path": p.name, "ast": metrics})
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
+
+    for file_path in file_paths:
+        file_ast = parse_ast(file_path)
+        file_ast_metrics = dict(visitor.run(file_ast))
+        output.append({"path": file_path.name, "ast": file_ast_metrics})
 
     return output
 
 
-def generate_tree_structure(path: str, prefix: str = "", is_last: bool = True) -> List[str]:
-    """Generate a tree structure representation of a directory."""
-    path_obj = Path(path).resolve()
-    tree_lines = []
+def to_tree(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+) -> Tree:
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
-    if not path_obj.exists():
-        raise FileNotFoundError(f"Path does not exist: {path}")
+    if not file_paths:
+        return None
 
-    def _build_tree(current_path: Path, current_prefix: str = "", is_root: bool = True):
-        if is_root:
-            tree_lines.append(f"{current_path.name}/")
-            items = sorted(current_path.iterdir(), key=lambda x: (x.is_file(), x.name.lower()))
-        else:
-            items = sorted(current_path.iterdir(), key=lambda x: (x.is_file(), x.name.lower()))
+    nodes: Dict[pathlib.Path, Tree] = {}
 
-        for i, item in enumerate(items):
-            is_last_item = i == len(items) - 1
+    root_node = Tree(Text(directory_path.name))
+    nodes[directory_path] = root_node
 
-            if is_root:
-                connector = "└── " if is_last_item else "├── "
-                new_prefix = "    " if is_last_item else "│   "
-            else:
-                connector = current_prefix + ("└── " if is_last_item else "├── ")
-                new_prefix = current_prefix + ("    " if is_last_item else "│   ")
+    for path in sorted(file_paths, key=lambda p: p.parts):
+        if path.name.startswith("."):
+            continue
 
-            if item.is_dir():
-                tree_lines.append(f"{connector}{item.name}/")
-                _build_tree(item, new_prefix, False)
-            else:
-                tree_lines.append(f"{connector}{item.name}")
+        relative_path = path.relative_to(directory_path)
+        current = root_node
+        current_parent = directory_path
 
-    if path_obj.is_file():
-        tree_lines.append(path_obj.name)
-    else:
-        _build_tree(path_obj)
+        for part in relative_path.parts[:-1]:
+            current_path = current_parent / part
+            if current_path not in nodes:
+                nodes[current_path] = current.add(Text(part, "yellow bold"))
+            current = nodes[current_path]
+            current_parent = current_path
 
-    return tree_lines
+        file_size = path.stat().st_size
+        text_filename = Text(path.name, "green")
+        text_filename.append(f" ({decimal(file_size)})", "blue")
+        current.add(text_filename)
+
+    return root_node
 
 
-def export_directory_contents(path: str, output_file: str = "llm.txt") -> str:
-    """Export directory contents to a markdown file suitable for LLMs."""
-    path_obj = Path(path).resolve()
+def to_llm(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+    output_file: str = "llm.txt",
+) -> pathlib.Path:
+    """Generate (and export) an llm.txt file."""
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
-    if not path_obj.exists():
-        raise FileNotFoundError(f"Path does not exist: {path}")
+    if not file_paths:
+        return None
 
-    content = []
-    content.append(f"# Directory Export: {path_obj.name}\n")
+    file_paths = sorted(file_paths)
 
-    content.append("## Directory Structure\n")
-    content.append("```")
-    tree_lines = generate_tree_structure(str(path_obj))
-    content.extend(tree_lines)
-    content.append("```\n")
+    content_list = []
 
-    content.append("## File Contents\n")
+    content_list.append("<<<--- File Paths --->>>\n\n")
+    for file_path in file_paths:
+        relative_path = file_path.relative_to(directory_path.parent)
+        content_list.append(f"{relative_path}\n")
 
-    def _process_directory(dir_path: Path, relative_base: Path):
-        for item in sorted(dir_path.iterdir(), key=lambda x: (x.is_file(), x.name.lower())):
-            if item.is_file():
-                relative_path = item.relative_to(relative_base)
-                try:
-                    with open(item, encoding="utf-8") as f:
-                        file_content = f.read()
-
-                    content.append(f"### `{relative_path}`\n")
-
-                    suffix = item.suffix.lower()
-                    if suffix == ".py":
-                        lang = "python"
-                    elif suffix in [".md", ".markdown"]:
-                        lang = "markdown"
-                    elif suffix in [".yml", ".yaml"]:
-                        lang = "yaml"
-                    elif suffix in [".json"]:
-                        lang = "json"
-                    elif suffix in [".toml"]:
-                        lang = "toml"
-                    elif suffix in [".txt", ".rst"]:
-                        lang = "text"
-                    else:
-                        lang = ""
-
-                    content.append(f"```{lang}")
-                    content.append(file_content)
-                    content.append("```\n")
-
-                except (UnicodeDecodeError, PermissionError) as e:
-                    content.append(f"### `{relative_path}`\n")
-                    content.append(f"*Could not read file: {e}*\n")
-
-            elif item.is_dir() and not item.name.startswith("."):
-                _process_directory(item, relative_base)
-
-    if path_obj.is_file():
+    content_list.append("\n<<<--- File Contents --->>>\n\n")
+    for file_path in file_paths:
+        relative_path = file_path.relative_to(directory_path.parent)
         try:
-            with open(path_obj, encoding="utf-8") as f:
+            with open(file_path, encoding="utf-8") as f:
                 file_content = f.read()
-            content.append(f"### `{path_obj.name}`\n")
-            content.append("```")
-            content.append(file_content)
-            content.append("```\n")
-        except (UnicodeDecodeError, PermissionError) as e:
-            content.append(f"*Could not read file: {e}*\n")
-    else:
-        _process_directory(path_obj, path_obj)
 
-    output_path = Path(output_file)
-    final_content = "\n".join(content)
+            content_list.append(f'<file path="{relative_path}">\n')
+            content_list.append(file_content)
+            content_list.append("\n</file>\n\n")
+        except Exception as e:
+            content_list.append(f'<file path="{relative_path}">\n')
+            content_list.append(f"Could not read file: {e}\n")
+            content_list.append("</file>\n\n")
 
+    output_path = pathlib.Path(output_file)
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(final_content)
+        f.writelines(content_list)
 
-    return str(output_path.resolve())
-
-
-def extract_dependencies(path: str) -> Set[str]:
-    """Extract all import dependencies from Python files in a directory."""
-    paths = parse_path(path)
-    all_imports = set()
-    visitor = ImportVisitor()
-
-    for p in paths:
-        tree = parse_tree(p)
-        imports = visitor.run(tree)
-        all_imports.update(imports)
-
-    return all_imports
+    return output_path
 
 
-def generate_requirements_txt(path: str, output_file: str = "requirements.txt") -> str:
-    """Generate a requirements.txt file from imports found in Python files."""
-    dependencies = extract_dependencies(path)
+def to_requirements(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+    output_file: str = "llm.txt",
+) -> pathlib.Path:
+    """Generate (and export) a requirements.txt file."""
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
+
+    if not file_paths:
+        return None
+
+    imports = _extract_imports(file_paths)
 
     external_deps = []
-
-    for dep in sorted(dependencies):
+    for dep in sorted(imports):
         if not dep.startswith(".") and dep not in sys.stdlib_module_names:
             root_module = dep.split(".")[0]
             if root_module not in sys.stdlib_module_names:
                 external_deps.append(root_module)
 
-    unique_deps = sorted(set(external_deps))
+    unique_deps = sorted(list(set(external_deps)))
 
-    output_path = Path(output_file)
+    output_path = pathlib.Path(output_file)
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write("# Generated requirements.txt\n")
-        f.write("# Note: You may need to specify versions manually\n")
-        f.write("\n")
-        for dep in unique_deps:
-            f.write(f"{dep}\n")
+        f.writelines(f"{dep}\n" for dep in unique_deps)
 
-    return str(output_path.resolve())
+    return output_path
+
+
+def _extract_imports(paths: List[pathlib.Path]) -> Set[str]:
+    """Extract all import dependencies from Python files in a directory."""
+    all_imports = set()
+    visitor = ImportVisitor()
+
+    for file_path in paths:
+        ast_tree = parse_ast(file_path)
+        imports = visitor.run(ast_tree)
+        all_imports.update(imports)
+
+    return all_imports

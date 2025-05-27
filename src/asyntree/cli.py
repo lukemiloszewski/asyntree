@@ -1,90 +1,107 @@
-import sys
+import pathlib
+from typing import Annotated, List, Optional
 
 import typer
-from rich.console import Console
-from rich.pretty import pprint
+from rich import print
 
-from asyntree.api import (
-    analyze_directory,
-    export_directory_contents,
-    extract_dependencies,
-    generate_requirements_txt,
-    generate_tree_structure,
-)
+from asyntree import api
 
 app = typer.Typer(add_completion=False)
-console = Console()
 
 
-@app.command()
-def describe(
-    path: str = typer.Argument(..., help="Input a directory or file path"),
+@app.command("describe")
+def cli_describe(
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
 ) -> None:
-    """Analyze Python files and show AST node counts."""
+    """Describe the ast nodes of all python files."""
     try:
-        output = analyze_directory(path)
-        pprint(output, max_length=50)
+        validated_path = _validate_path(path)
+        cli_output = api.describe(validated_path, incl_ext=[".py"], excl_dir=exclude)
+        print(cli_output)
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-tree")
-def to_tree(
-    path: str = typer.Argument(..., help="Input a directory path"),
+def cli_to_tree(
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
+    include: Annotated[
+        Optional[List[str]], typer.Option("--include", "-i", help="File extensions to include")
+    ] = None,
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
 ) -> None:
-    """Display the tree structure of a directory."""
+    """Generate (and print) the tree structure of the directory."""
     try:
-        tree_lines = generate_tree_structure(path)
-        for line in tree_lines:
-            console.print(line)
-    except FileNotFoundError as e:
-        console.print(f"[red]Error: {e}[/red]")
-        raise typer.Exit(1)
+        validated_path = _validate_path(path)
+        cli_output = api.to_tree(validated_path, incl_ext=include, excl_dir=exclude)
+        print(cli_output)
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-llm")
-def to_llm(
-    path: str = typer.Argument(..., help="Input a directory or file path"),
-    output: str = typer.Option("llm.txt", "--output", "-o", help="Output file name"),
+def cli_to_llm(
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
+    include: Annotated[
+        Optional[List[str]], typer.Option("--include", "-i", help="File extensions to include")
+    ] = None,
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
+    output_file: Annotated[
+        str, typer.Option("--output", "-o", help="Output file name")
+    ] = "llm.txt",
 ) -> None:
-    """Export directory contents to a markdown file for LLM consumption."""
+    """Generate (and export) the llm.txt file."""
     try:
-        output_path = export_directory_contents(path, output)
-        console.print(f"[green]Exported to: {output_path}[/green]")
+        validated_path = _validate_path(path)
+        cli_output = api.to_llm(
+            validated_path, incl_ext=include, excl_dir=exclude, output_file=output_file
+        )
+        print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-requirements")
-def to_requirements(
-    path: str = typer.Argument(..., help="Input a directory path"),
-    output: str = typer.Option("requirements.txt", "--output", "-o", help="Output file name"),
+def cli_to_requirements(
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
+    output_file: Annotated[
+        str, typer.Option("--output", "-o", help="Output file name")
+    ] = "requirements.txt",
 ) -> None:
-    """Generate a requirements.txt file from Python imports."""
+    """Generate (and export) the requirements.txt file."""
     try:
-        output_path = generate_requirements_txt(path, output)
-        dependencies = extract_dependencies(path)
-
-        console.print(f"[green]Generated {output}: {output_path}[/green]")
-        console.print(f"[blue]Found {len(dependencies)} unique dependencies[/blue]")
+        validated_path = _validate_path(path)
+        cli_output = api.to_requirements(
+            validated_path, incl_ext=[".py"], excl_dir=exclude, output_file=output_file
+        )
+        print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
-def main():
-    """Main entry point."""
-    if len(sys.argv) == 1:
-        console.print("[yellow]No command provided. Use --help to see available commands.[/yellow]")
-        raise typer.Exit(1)
+def _validate_path(value: str) -> pathlib.Path:
+    path = pathlib.Path(value).resolve() if value else pathlib.Path.cwd()
 
-    app()
+    if not path.exists():
+        raise FileNotFoundError(f"No such file or directory: {path}")
+    if not path.is_dir():
+        raise NotADirectoryError(f"Path is not a directory: {path}")
+
+    return path
 
 
-if __name__ == "__main__":
-    main()
+# TODO: validate all inputs, add data structure for directory tree after filterings, add helpers in api
