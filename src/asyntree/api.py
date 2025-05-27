@@ -6,7 +6,7 @@ from rich.filesize import decimal
 from rich.text import Text
 from rich.tree import Tree
 
-from asyntree.parser import parse_ast, parse_directory  # noqa: F401
+from asyntree.parser import parse_ast, parse_directory
 from asyntree.visitor import ImportVisitor, Visitor
 
 
@@ -106,17 +106,26 @@ def to_llm(
             content_list.append("</file>\n\n")
 
     output_path = pathlib.Path(output_file)
-    with open(output_path, "w", encoding="utf-8") as output_f:
-        output_f.writelines(content_list)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.writelines(content_list)
 
     return output_path
 
 
 def to_requirements(
-    paths: List[pathlib.Path], output_file: str = "requirements.txt"
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+    output_file: str = "llm.txt",
 ) -> pathlib.Path:
     """Generate (and export) a requirements.txt file."""
-    imports = _extract_imports(paths)
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
+
+    if not file_paths:
+        return None
+
+    imports = _extract_imports(file_paths)
 
     external_deps = []
     for dep in sorted(imports):
@@ -125,12 +134,11 @@ def to_requirements(
             if root_module not in sys.stdlib_module_names:
                 external_deps.append(root_module)
 
-    unique_deps = sorted(set(external_deps))
+    unique_deps = sorted(list(set(external_deps)))
 
     output_path = pathlib.Path(output_file)
     with open(output_path, "w", encoding="utf-8") as f:
-        for dep in unique_deps:
-            f.write(f"{dep}\n")
+        f.writelines(f"{dep}\n" for dep in unique_deps)
 
     return output_path
 

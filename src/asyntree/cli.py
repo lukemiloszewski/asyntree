@@ -2,18 +2,16 @@ import pathlib
 from typing import Annotated, List, Optional
 
 import typer
-from rich.console import Console
+from rich import print
 
 from asyntree import api
-from asyntree.parser import parse_directory
 
 app = typer.Typer(add_completion=False)
-console = Console()
 
 
 @app.command("describe")
 def cli_describe(
-    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
     exclude: Annotated[
         Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
     ] = None,
@@ -22,15 +20,15 @@ def cli_describe(
     try:
         validated_path = _validate_path(path)
         cli_output = api.describe(validated_path, incl_ext=[".py"], excl_dir=exclude)
-        console.print(cli_output)
+        print(cli_output)
     except Exception as e:
-        console.print(f"Error: {e}")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-tree")
 def cli_to_tree(
-    path: Annotated[Optional[str], typer.Argument(help="Input a directory path")] = None,
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
     include: Annotated[
         Optional[List[str]], typer.Option("--include", "-i", help="File extensions to include")
     ] = None,
@@ -42,15 +40,15 @@ def cli_to_tree(
     try:
         validated_path = _validate_path(path)
         cli_output = api.to_tree(validated_path, incl_ext=include, excl_dir=exclude)
-        console.print(cli_output)
+        print(cli_output)
     except Exception as e:
-        console.print(f"Error: {e}")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-llm")
 def cli_to_llm(
-    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
     include: Annotated[
         Optional[List[str]], typer.Option("--include", "-i", help="File extensions to include")
     ] = None,
@@ -67,24 +65,31 @@ def cli_to_llm(
         cli_output = api.to_llm(
             validated_path, incl_ext=include, excl_dir=exclude, output_file=output_file
         )
-        console.print(f"Exported to: {cli_output}")
+        print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"Error: {e}")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
 @app.command("to-requirements")
 def cli_to_requirements(
-    path: Optional[str] = typer.Argument(None, help="Input a directory path"),
-    output_file: str = typer.Option("requirements.txt", "--output", "-o", help="Output file name"),
+    path: Annotated[pathlib.Path, typer.Argument(help="Input a directory path")],
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
+    output_file: Annotated[
+        str, typer.Option("--output", "-o", help="Output file name")
+    ] = "requirements.txt",
 ) -> None:
     """Generate (and export) the requirements.txt file."""
     try:
-        file_paths = parse_directory(path, include=[".py"])
-        cli_output = api.to_requirements(file_paths, output_file=output_file)
-        console.print(f"Exported to: {cli_output}")
+        validated_path = _validate_path(path)
+        cli_output = api.to_requirements(
+            validated_path, incl_ext=[".py"], excl_dir=exclude, output_file=output_file
+        )
+        print(f"Exported to: {cli_output}")
     except Exception as e:
-        console.print(f"Error: {e}")
+        print(f"Error: {e}")
         raise typer.Exit(1)
 
 
@@ -92,10 +97,11 @@ def _validate_path(value: str) -> pathlib.Path:
     path = pathlib.Path(value).resolve() if value else pathlib.Path.cwd()
 
     if not path.exists():
-        raise typer.BadParameter(f"No such file or directory: {path}")
-        # raise FileNotFoundError(f"No such file or directory: {path}")
+        raise FileNotFoundError(f"No such file or directory: {path}")
     if not path.is_dir():
-        raise typer.BadParameter(f"Path is not a directory: {path}")
-        # raise NotADirectoryError(f"Path is not a directory: {path}")
+        raise NotADirectoryError(f"Path is not a directory: {path}")
 
     return path
+
+
+# TODO: validate all inputs, add data structure for directory tree after filterings, add helpers in api
