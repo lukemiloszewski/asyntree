@@ -68,35 +68,46 @@ def to_tree(
     return root_node
 
 
-def to_llm(paths: List[pathlib.Path], output_file: str = "llm.txt") -> pathlib.Path:
+def to_llm(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+    output_file: str = "llm.txt",
+) -> pathlib.Path:
     """Generate (and export) an llm.txt file."""
-    content = []
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
-    # directory structure
-    content.append("<<<--- Directory Structure --->>>\n")
-    tree_lines = to_tree(paths).render().splitlines()
-    content.append("\n".join(tree_lines))
+    if not file_paths:
+        return None
 
-    # directory contents
-    content.append("<<<--- Directory Contents --->>>\n\n")
+    file_paths = sorted(file_paths)
 
-    for file_path in paths:
+    content_list = []
+
+    content_list.append("<<<--- File Paths --->>>\n\n")
+    for file_path in file_paths:
+        relative_path = file_path.relative_to(directory_path.parent)
+        content_list.append(f"{relative_path}\n")
+
+    content_list.append("\n<<<--- File Contents --->>>\n\n")
+    for file_path in file_paths:
+        relative_path = file_path.relative_to(directory_path.parent)
         try:
             with open(file_path, encoding="utf-8") as f:
                 file_content = f.read()
-            content.append(f"<<< {file_path.name} >>>\n")
-            content.append(file_content)
-            content.append("<<<>>>\n")
+
+            content_list.append(f'<file path="{relative_path}">\n')
+            content_list.append(file_content)
+            content_list.append("\n</file>\n\n")
         except Exception as e:
-            content.append(f"<<< {file_path.name} >>>\n")
-            content.append(f"Could not read file: {e}")
-            content.append("<<<>>>\n")
+            content_list.append(f'<file path="{relative_path}">\n')
+            content_list.append(f"Could not read file: {e}\n")
+            content_list.append("</file>\n\n")
 
     output_path = pathlib.Path(output_file)
-    content = "\n".join(content)
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(content)
+    with open(output_path, "w", encoding="utf-8") as output_f:
+        output_f.writelines(content_list)
 
     return output_path
 

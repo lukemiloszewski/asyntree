@@ -51,12 +51,22 @@ def cli_to_tree(
 @app.command("to-llm")
 def cli_to_llm(
     path: Optional[str] = typer.Argument(None, help="Input a directory path"),
-    output_file: str = typer.Option("llm.txt", "--output", "-o", help="Output file name"),
+    include: Annotated[
+        Optional[List[str]], typer.Option("--include", "-i", help="File extensions to include")
+    ] = None,
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
+    output_file: Annotated[
+        str, typer.Option("--output", "-o", help="Output file name")
+    ] = "llm.txt",
 ) -> None:
     """Generate (and export) the llm.txt file."""
     try:
-        file_paths = parse_directory(path)
-        cli_output = api.to_llm(file_paths, output_file=output_file)
+        validated_path = _validate_path(path)
+        cli_output = api.to_llm(
+            validated_path, incl_ext=include, excl_dir=exclude, output_file=output_file
+        )
         console.print(f"Exported to: {cli_output}")
     except Exception as e:
         console.print(f"Error: {e}")
