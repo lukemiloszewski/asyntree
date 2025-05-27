@@ -4,12 +4,7 @@ from typing import Annotated, List, Optional
 import typer
 from rich.console import Console
 
-from asyntree.api import (
-    describe,
-    to_llm,
-    to_requirements,
-    to_tree,
-)
+from asyntree import api
 from asyntree.parser import parse_directory
 
 app = typer.Typer(add_completion=False)
@@ -19,11 +14,14 @@ console = Console()
 @app.command("describe")
 def cli_describe(
     path: Optional[str] = typer.Argument(None, help="Input a directory path"),
+    exclude: Annotated[
+        Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
+    ] = None,
 ) -> None:
     """Describe the ast nodes of all python files."""
     try:
-        file_paths = parse_directory(path, include=[".py"])
-        cli_output = describe(file_paths)
+        validated_path = _validate_path(path)
+        cli_output = api.describe(validated_path, incl_ext=[".py"], excl_dir=exclude)
         console.print(cli_output)
     except Exception as e:
         console.print(f"Error: {e}")
@@ -40,9 +38,10 @@ def cli_to_tree(
         Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
     ] = None,
 ) -> None:
+    """Generate (and print) the tree structure of the directory."""
     try:
         validated_path = _validate_path(path)
-        cli_output = to_tree(validated_path, incl_ext=include, excl_dir=exclude)
+        cli_output = api.to_tree(validated_path, incl_ext=include, excl_dir=exclude)
         console.print(cli_output)
     except Exception as e:
         console.print(f"Error: {e}")
@@ -57,7 +56,7 @@ def cli_to_llm(
     """Generate (and export) the llm.txt file."""
     try:
         file_paths = parse_directory(path)
-        cli_output = to_llm(file_paths, output_file=output_file)
+        cli_output = api.to_llm(file_paths, output_file=output_file)
         console.print(f"Exported to: {cli_output}")
     except Exception as e:
         console.print(f"Error: {e}")
@@ -72,7 +71,7 @@ def cli_to_requirements(
     """Generate (and export) the requirements.txt file."""
     try:
         file_paths = parse_directory(path, include=[".py"])
-        cli_output = to_requirements(file_paths, output_file=output_file)
+        cli_output = api.to_requirements(file_paths, output_file=output_file)
         console.print(f"Exported to: {cli_output}")
     except Exception as e:
         console.print(f"Error: {e}")

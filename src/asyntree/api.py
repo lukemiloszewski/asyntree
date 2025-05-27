@@ -10,20 +10,28 @@ from asyntree.parser import parse_ast, parse_directory  # noqa: F401
 from asyntree.visitor import ImportVisitor, Visitor
 
 
-def describe(paths: List[pathlib.Path]) -> List[Dict[str, Any]]:
+def describe(
+    directory_path: pathlib.Path,
+    *,
+    incl_ext: Optional[List[str]] = None,
+    excl_dir: Optional[List[str]] = None,
+) -> List[Dict[str, Any]]:
     visitor = Visitor()
     output = []
 
-    for file_path in paths:
-        ast_tree = parse_ast(file_path)
-        metrics = dict(visitor.run(ast_tree))
-        output.append({"path": file_path.name, "ast": metrics})
+    file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
+
+    for file_path in file_paths:
+        file_ast = parse_ast(file_path)
+        file_ast_metrics = dict(visitor.run(file_ast))
+        output.append({"path": file_path.name, "ast": file_ast_metrics})
 
     return output
 
 
 def to_tree(
     directory_path: pathlib.Path,
+    *,
     incl_ext: Optional[List[str]] = None,
     excl_dir: Optional[List[str]] = None,
 ) -> Tree:
