@@ -9,7 +9,7 @@ Syntax trees and file utilities.
 Installation:
 
 ```shell
-uv install tool asyntree
+uv tool install asyntree
 ```
 
 Usage:
