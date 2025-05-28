@@ -39,7 +39,7 @@ asyntree to-tree . -i .py -i .r -e .venv -e .git
 asyntree to-llm . -i .py -i .r -e .venv -e .git -o llm.txt
 
 # asyntree to-requirements --exlcude <directory> --output <file>
-asyntree to-requirements . -e .venv -e .git -o requirements.txt
+asyntree to-requirements . -e .venv -o requirements.txt
 ```
 
 ### As a Library
