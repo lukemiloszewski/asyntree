@@ -15,7 +15,7 @@ uv install tool asyntree
 Usage:
 
 ```shell
-10:28 ❯ asyntree --help
+>>> asyntree --help
 
  Usage: asyntree [OPTIONS] COMMAND [ARGS]...
 
