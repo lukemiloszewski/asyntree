@@ -16,6 +16,8 @@ def describe(
     incl_ext: Optional[List[str]] = None,
     excl_dir: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
+    """Print the ast nodes of all python files."""
+
     visitor = Visitor()
     output = []
 
@@ -35,6 +37,8 @@ def to_tree(
     incl_ext: Optional[List[str]] = None,
     excl_dir: Optional[List[str]] = None,
 ) -> Tree:
+    """Print the tree structure of the directory."""
+
     file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
     if not file_paths:
@@ -75,7 +79,8 @@ def to_llm(
     excl_dir: Optional[List[str]] = None,
     output_file: str = "llm.txt",
 ) -> pathlib.Path:
-    """Generate (and export) an llm.txt file."""
+    """Generate (and export) the llm.txt file."""
+
     file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
     if not file_paths:
@@ -119,7 +124,8 @@ def to_requirements(
     excl_dir: Optional[List[str]] = None,
     output_file: str = "llm.txt",
 ) -> pathlib.Path:
-    """Generate (and export) a requirements.txt file."""
+    """Generate (and export) the requirements.txt file."""
+
     file_paths = parse_directory(directory_path, incl_ext=incl_ext, excl_dir=excl_dir)
 
     if not file_paths:
@@ -144,7 +150,6 @@ def to_requirements(
 
 
 def _extract_imports(paths: List[pathlib.Path]) -> Set[str]:
-    """Extract all import dependencies from Python files in a directory."""
     all_imports = set()
     visitor = ImportVisitor()
 

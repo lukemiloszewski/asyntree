@@ -16,7 +16,7 @@ def cli_describe(
         Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
     ] = None,
 ) -> None:
-    """Describe the ast nodes of all python files."""
+    """Print the ast nodes of all python files."""
     try:
         validated_path = _validate_path(path)
         cli_output = api.describe(validated_path, incl_ext=[".py"], excl_dir=exclude)
@@ -36,7 +36,7 @@ def cli_to_tree(
         Optional[List[str]], typer.Option("--exclude", "-e", help="Directory names to exclude")
     ] = None,
 ) -> None:
-    """Generate (and print) the tree structure of the directory."""
+    """Print the tree structure of the directory."""
     try:
         validated_path = _validate_path(path)
         cli_output = api.to_tree(validated_path, incl_ext=include, excl_dir=exclude)
@@ -104,4 +104,4 @@ def _validate_path(value: str) -> pathlib.Path:
     return path
 
 
-# TODO: validate all inputs, add data structure for directory tree after filterings, add helpers in api
+# TODO: validate all inputs, add data structure for directory tree after filterings, add helpers in api, add colors

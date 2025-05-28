@@ -4,39 +4,61 @@ Syntax trees and file utilities.
 
 ## Usage
 
-As a cli:
+### As a CLI
+
+Installation:
 
 ```shell
-# help
-uvx run asyntree --help
-
-# available commands
-uvx run asyntree describe .
-uvx run asyntree to-tree .
-uvx run asyntree to-llm .
-uvx run asyntree to-requirements .
+uv install tool asyntree
 ```
 
-As a library:
+Usage:
+
+```shell
+10:28 ❯ asyntree --help
+
+ Usage: asyntree [OPTIONS] COMMAND [ARGS]...
+
+╭─ Options ───────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                             │
+╰─────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────────╮
+│ to-tree           Print the tree structure of the directory.            │
+│ to-llm            Generate (and export) the llm.txt file.               │
+│ to-requirements   Generate (and export) the requirements.txt file.      │
+╰─────────────────────────────────────────────────────────────────────────╯
+```
+
+Configuration:
+
+```shell
+# asyntree to-tree --include <file_extension> --exlcude <directory>
+asyntree to-tree . -i .py -i .r -e .venv .git
+
+# asyntree to-llm --include <file_extension> --exlcude <directory> --output <file>
+asyntree to-llm . -i .py -i .r -e .venv -e .git -o llm.txt
+
+# asyntree to-requirements --exlcude <directory> --output <file>
+asyntree to-requirements . -e .venv -e .git -o requirements.txt
+```
+
+### As a Library
+
+Installation:
+
+```shell
+uv add asyntree
+```
+
+Usage:
 
 ```python
-import asyntree as at
+import asyntree as atree
 
-requirements = at.to_requirements("...")
+atree.to_requirements("requirements.txt")
+atree.to_llm("llm.txt")
 ```
 
 ## Development
 
-```shell
-# install project
-make init
-
-# run linting 
-make lint
-
-# run formatting
-make format
-
-# run tests
-make test
-```
+The `Makefile` contains relevant commands to get the development environment configured (ie `make init`, `make test`, `make lint`, `make format`, `make deps`).
