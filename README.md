@@ -33,7 +33,7 @@ Configuration:
 
 ```shell
 # asyntree to-tree --include <file_extension> --exlcude <directory>
-asyntree to-tree . -i .py -i .r -e .venv .git
+asyntree to-tree . -i .py -i .r -e .venv -e .git
 
 # asyntree to-llm --include <file_extension> --exlcude <directory> --output <file>
 asyntree to-llm . -i .py -i .r -e .venv -e .git -o llm.txt
